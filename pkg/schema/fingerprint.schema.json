@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ambercloudai/amber-lens/pkg/schema/fingerprint.schema.json",
+  "title": "Amber Workload Fingerprint",
+  "description": "Anonymized, destination-neutral output of an Amber Lens scan. v1 core to freeze by July 1.",
+  "type": "object",
+  "required": ["schema", "scanId", "workloads"],
+  "properties": {
+    "schema": { "type": "string", "const": "v1" },
+    "scanId": { "type": "string" },
+    "windowHours": { "type": "integer", "minimum": 1 },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "workloads": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["token", "kind"],
+        "properties": {
+          "token": { "type": "string", "description": "Salted token; never a real name" },
+          "kind": { "type": "string", "enum": ["vm", "sqlserver", "oracle", "host", "dependency"] },
+          "metadata": { "type": "object" }
+        }
+      }
+    }
+  }
+}
