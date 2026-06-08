@@ -1,0 +1,279 @@
+{
+  "schema": "amber.fingerprint/v1",
+  "schemaVersion": "1.0.0",
+  "scanId": "nw-dc-east-20260907",
+  "generatedAt": "2026-09-07T06:00:00Z",
+  "lens": {
+    "version": "0.9.0",
+    "mode": "read-only",
+    "buildSha": "abc1234"
+  },
+  "scan": {
+    "window": {
+      "startedAt": "2026-09-04T06:00:00Z",
+      "endedAt": "2026-09-07T06:00:00Z",
+      "durationHours": 72
+    },
+    "sampleIntervalSeconds": 300,
+    "samplesCollected": 864,
+    "dailyCyclesCaptured": 3,
+    "maintenanceWindowsCaptured": 2,
+    "confidence": 0.95
+  },
+  "tokenization": {
+    "scheme": "env-role-NN",
+    "algorithm": "HMAC-SHA256",
+    "saltId": "salt-2026-09",
+    "mapLocation": "on-prem"
+  },
+  "environment": {
+    "siteToken": "site-01",
+    "datacenterToken": "dc-east"
+  },
+  "summary": {
+    "counts": {
+      "vms": 1284,
+      "hosts": 96,
+      "clusters": 8,
+      "databases": 312,
+      "dependencies": 3140
+    },
+    "totals": {
+      "vcpu": 6420,
+      "memoryGiB": 41984,
+      "storageProvisionedGiB": 1992294,
+      "storageUsedGiB": 733003
+    }
+  },
+  "workloads": [
+    {
+      "token": "prod-cl-01",
+      "kind": "cluster",
+      "cluster": {
+        "hypervisor": "vmware-vsphere",
+        "version": "7.0",
+        "hostCount": 24,
+        "drsEnabled": true,
+        "haEnabled": true,
+        "vsanEnabled": true,
+        "nsxEnabled": false,
+        "licensing": [
+          {
+            "product": "vSphere",
+            "edition": "Enterprise Plus",
+            "cpuCount": 48
+          }
+        ]
+      }
+    },
+    {
+      "token": "prod-vm-417",
+      "kind": "vm",
+      "os": {
+        "family": "windows",
+        "distribution": "Windows Server",
+        "version": "2012 R2",
+        "endOfLife": true,
+        "endOfLifeDate": "2023-10-10",
+        "licensing": {
+          "product": "Windows Server",
+          "edition": "Datacenter",
+          "licensableCores": 16,
+          "softwareAssurance": "unknown"
+        }
+      },
+      "compute": {
+        "vcpu": 8,
+        "memoryGiB": 32,
+        "provisionedStorageGiB": 500,
+        "usedStorageGiB": 210
+      },
+      "performance": {
+        "cpuPct": {
+          "avg": 11,
+          "p50": 9,
+          "p95": 34,
+          "peak": 61,
+          "unit": "percent"
+        },
+        "memoryPct": {
+          "avg": 48,
+          "p95": 62,
+          "peak": 71,
+          "unit": "percent"
+        }
+      },
+      "vm": {
+        "hypervisor": "vmware-vsphere",
+        "clusterToken": "prod-cl-01",
+        "powerState": "on",
+        "uptimeHours": 2160
+      }
+    },
+    {
+      "token": "prod-db-022",
+      "kind": "database",
+      "database": {
+        "engine": "oracle",
+        "edition": "Enterprise",
+        "version": "19c",
+        "sizeGiB": 4096,
+        "licensableCores": 32,
+        "ha": {
+          "type": "rac",
+          "replicas": 3
+        },
+        "features": [
+          "data-guard"
+        ],
+        "options": [
+          {
+            "name": "Partitioning",
+            "inUse": true
+          },
+          {
+            "name": "Advanced Security",
+            "inUse": true
+          },
+          {
+            "name": "Diagnostic Pack",
+            "inUse": false
+          },
+          {
+            "name": "Tuning Pack",
+            "inUse": false
+          }
+        ],
+        "workload": {
+          "cpuPct": {
+            "avg": 38,
+            "p95": 72,
+            "peak": 88,
+            "unit": "percent"
+          },
+          "diskIops": {
+            "avg": 4200,
+            "p95": 11800,
+            "peak": 15200,
+            "unit": "iops"
+          }
+        },
+        "collection": {
+          "method": [
+            "v$",
+            "statspack"
+          ],
+          "diagnosticPackLicensed": false,
+          "fallbackUsed": true
+        }
+      }
+    },
+    {
+      "token": "prod-db-115",
+      "kind": "database",
+      "database": {
+        "engine": "sqlserver",
+        "edition": "Enterprise",
+        "version": "2016",
+        "sizeGiB": 1200,
+        "licensableCores": 24,
+        "ha": {
+          "type": "alwayson",
+          "replicas": 2
+        },
+        "features": [
+          "agent-jobs",
+          "ssis"
+        ],
+        "workload": {
+          "cpuPct": {
+            "avg": 29,
+            "p95": 61,
+            "peak": 80,
+            "unit": "percent"
+          },
+          "diskIops": {
+            "avg": 3100,
+            "p95": 9000,
+            "peak": 12500,
+            "unit": "iops"
+          }
+        },
+        "collection": {
+          "method": [
+            "dmv",
+            "catalog"
+          ]
+        }
+      }
+    }
+  ],
+  "dependencies": [
+    {
+      "fromToken": "prod-vm-417",
+      "toToken": "prod-db-115",
+      "kind": "network-flow",
+      "port": 1433,
+      "protocol": "tcp",
+      "observations": 840
+    }
+  ],
+  "collectionIssues": [
+    {
+      "code": "oracle.diagnostic_pack.unlicensed",
+      "severity": "info",
+      "message": "Diagnostic Pack not licensed on 31 Oracle instances; used Statspack/v$ fallback (no licensing exposure created by the scan).",
+      "affectedTokens": [
+        "prod-db-022"
+      ]
+    }
+  ],
+  "recommendations": [
+    {
+      "id": "rec-001",
+      "action": "right-size",
+      "appliesTo": [
+        "prod-vm-417"
+      ],
+      "rationale": "Sustained low CPU with ample headroom; oversized vs. observed demand.",
+      "evidence": [
+        "cpuPct.p95=34% over 72h",
+        "cpuPct.avg=11%"
+      ],
+      "targetProfile": {
+        "vcpu": 4,
+        "memoryGiB": 16
+      },
+      "impact": {
+        "metric": "vcpu_reclaimable",
+        "low": 2,
+        "high": 4,
+        "unit": "vcpu"
+      },
+      "confidence": "high",
+      "status": "preliminary",
+      "generatedBy": "lens"
+    },
+    {
+      "id": "rec-002",
+      "action": "retire-eol",
+      "appliesTo": [
+        "prod-vm-417"
+      ],
+      "rationale": "Operating system past end-of-life; prioritize in the first migration wave.",
+      "evidence": [
+        "os.endOfLife=true",
+        "os.version=2012 R2"
+      ],
+      "impact": {
+        "metric": "workloads_eol",
+        "low": 1,
+        "high": 1,
+        "unit": "workloads"
+      },
+      "confidence": "high",
+      "status": "preliminary",
+      "generatedBy": "lens"
+    }
+  ]
+}

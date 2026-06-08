@@ -2,23 +2,851 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/ambercloudai/amber-lens/pkg/schema/fingerprint.schema.json",
   "title": "Amber Workload Fingerprint",
-  "description": "Anonymized, destination-neutral output of an Amber Lens scan. v1 core to freeze by July 1.",
+  "description": "Versioned, anonymized, destination-neutral output of an Amber Lens scan. Contains observed facts AND preliminary, advisory, NON-monetary recommendations (the free hook). It NEVER contains validated risk scores, TCO/cost, or reverse-bid proposals — those are computed in Amber Navigator (the paid layer). Workloads are identified by salted tokens; the token-to-real-name map never leaves the customer network. v1 core to freeze 2026-07-01.",
   "type": "object",
-  "required": ["schema", "scanId", "workloads"],
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "schemaVersion",
+    "scanId",
+    "generatedAt",
+    "lens",
+    "scan",
+    "tokenization",
+    "summary",
+    "workloads"
+  ],
   "properties": {
-    "schema": { "type": "string", "const": "v1" },
-    "scanId": { "type": "string" },
-    "windowHours": { "type": "integer", "minimum": 1 },
-    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "schema": {
+      "const": "amber.fingerprint/v1"
+    },
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^1\\.\\d+\\.\\d+$",
+      "description": "SemVer within the v1 line; additive fields bump minor/patch."
+    },
+    "scanId": {
+      "type": "string",
+      "description": "Opaque scan identifier. No PII."
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "lens": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "mode"
+      ],
+      "properties": {
+        "version": {
+          "type": "string"
+        },
+        "mode": {
+          "const": "read-only"
+        },
+        "buildSha": {
+          "type": "string"
+        }
+      }
+    },
+    "scan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "window",
+        "sampleIntervalSeconds",
+        "confidence"
+      ],
+      "properties": {
+        "window": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "startedAt",
+            "endedAt",
+            "durationHours"
+          ],
+          "properties": {
+            "startedAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "endedAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "durationHours": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "sampleIntervalSeconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "samplesCollected": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "dailyCyclesCaptured": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maintenanceWindowsCaptured": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Statistical confidence of the sampling window (e.g., 0.95)."
+        }
+      }
+    },
+    "tokenization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scheme",
+        "algorithm",
+        "mapLocation"
+      ],
+      "properties": {
+        "scheme": {
+          "type": "string",
+          "examples": [
+            "env-role-NN"
+          ]
+        },
+        "algorithm": {
+          "type": "string",
+          "examples": [
+            "HMAC-SHA256"
+          ]
+        },
+        "saltId": {
+          "type": "string",
+          "description": "Opaque salt identifier — NOT the salt value."
+        },
+        "mapLocation": {
+          "const": "on-prem",
+          "description": "The token-to-real-name map never leaves the customer network."
+        }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "siteToken": {
+          "type": "string"
+        },
+        "datacenterToken": {
+          "type": "string"
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "counts",
+        "totals"
+      ],
+      "properties": {
+        "counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "vms": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "hosts": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "clusters": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "databases": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "dependencies": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "totals": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "vcpu": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "memoryGiB": {
+              "type": "number",
+              "minimum": 0
+            },
+            "storageProvisionedGiB": {
+              "type": "number",
+              "minimum": 0
+            },
+            "storageUsedGiB": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
     "workloads": {
       "type": "array",
       "items": {
-        "type": "object",
-        "required": ["token", "kind"],
-        "properties": {
-          "token": { "type": "string", "description": "Salted token; never a real name" },
-          "kind": { "type": "string", "enum": ["vm", "sqlserver", "oracle", "host", "dependency"] },
-          "metadata": { "type": "object" }
+        "$ref": "#/$defs/workload"
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/dependency"
+      }
+    },
+    "collectionIssues": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/collectionIssue"
+      }
+    },
+    "recommendations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/recommendation"
+      }
+    }
+  },
+  "$defs": {
+    "perfStat": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Window-summarized statistic — no raw time series.",
+      "required": [
+        "avg",
+        "peak",
+        "unit"
+      ],
+      "properties": {
+        "avg": {
+          "type": "number"
+        },
+        "p50": {
+          "type": "number"
+        },
+        "p95": {
+          "type": "number"
+        },
+        "peak": {
+          "type": "number"
+        },
+        "unit": {
+          "type": "string"
+        }
+      }
+    },
+    "performance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cpuPct": {
+          "$ref": "#/$defs/perfStat"
+        },
+        "memoryPct": {
+          "$ref": "#/$defs/perfStat"
+        },
+        "diskIops": {
+          "$ref": "#/$defs/perfStat"
+        },
+        "diskThroughputMBps": {
+          "$ref": "#/$defs/perfStat"
+        },
+        "networkMbps": {
+          "$ref": "#/$defs/perfStat"
+        }
+      }
+    },
+    "os": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "family"
+      ],
+      "properties": {
+        "family": {
+          "enum": [
+            "windows",
+            "linux",
+            "other"
+          ]
+        },
+        "distribution": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "endOfLife": {
+          "type": "boolean"
+        },
+        "endOfLifeDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "licensing": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "product": {
+              "type": "string"
+            },
+            "edition": {
+              "type": "string"
+            },
+            "licensableCores": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "softwareAssurance": {
+              "enum": [
+                "yes",
+                "no",
+                "unknown"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "compute": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "vcpu": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "memoryGiB": {
+          "type": "number",
+          "minimum": 0
+        },
+        "provisionedStorageGiB": {
+          "type": "number",
+          "minimum": 0
+        },
+        "usedStorageGiB": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "vm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "hypervisor"
+      ],
+      "properties": {
+        "hypervisor": {
+          "enum": [
+            "vmware-vsphere",
+            "hyper-v",
+            "nutanix-ahv"
+          ]
+        },
+        "clusterToken": {
+          "type": "string"
+        },
+        "powerState": {
+          "enum": [
+            "on",
+            "off",
+            "suspended"
+          ]
+        },
+        "uptimeHours": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "host": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "hypervisor": {
+          "enum": [
+            "vmware-vsphere",
+            "hyper-v",
+            "nutanix-ahv"
+          ]
+        },
+        "hypervisorVersion": {
+          "type": "string"
+        },
+        "clusterToken": {
+          "type": "string"
+        },
+        "cpuSockets": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "physicalCores": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "cluster": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "hypervisor": {
+          "enum": [
+            "vmware-vsphere",
+            "hyper-v",
+            "nutanix-ahv"
+          ]
+        },
+        "version": {
+          "type": "string"
+        },
+        "hostCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "drsEnabled": {
+          "type": "boolean"
+        },
+        "haEnabled": {
+          "type": "boolean"
+        },
+        "vsanEnabled": {
+          "type": "boolean"
+        },
+        "nsxEnabled": {
+          "type": "boolean"
+        },
+        "licensing": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "product": {
+                "type": "string"
+              },
+              "edition": {
+                "type": "string"
+              },
+              "cpuCount": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    "database": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "engine"
+      ],
+      "properties": {
+        "engine": {
+          "enum": [
+            "sqlserver",
+            "oracle",
+            "postgresql",
+            "mysql",
+            "mariadb",
+            "other"
+          ]
+        },
+        "edition": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "sizeGiB": {
+          "type": "number",
+          "minimum": 0
+        },
+        "instanceCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "licensableCores": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ha": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "enum": [
+                "alwayson",
+                "rac",
+                "dataguard",
+                "replication",
+                "none"
+              ]
+            },
+            "replicas": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "options": {
+          "type": "array",
+          "description": "Licensing-relevant options/packs (e.g., Oracle Partitioning, Advanced Security, Diagnostic/Tuning Pack).",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "inUse"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "inUse": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "workload": {
+          "$ref": "#/$defs/performance"
+        },
+        "collection": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "method": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "dmv",
+                  "awr",
+                  "ash",
+                  "statspack",
+                  "v$",
+                  "catalog"
+                ]
+              }
+            },
+            "diagnosticPackLicensed": {
+              "type": "boolean"
+            },
+            "fallbackUsed": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "workload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "token",
+        "kind"
+      ],
+      "properties": {
+        "token": {
+          "type": "string",
+          "description": "Salted token — never a real name."
+        },
+        "kind": {
+          "enum": [
+            "vm",
+            "host",
+            "cluster",
+            "database"
+          ]
+        },
+        "os": {
+          "$ref": "#/$defs/os"
+        },
+        "compute": {
+          "$ref": "#/$defs/compute"
+        },
+        "performance": {
+          "$ref": "#/$defs/performance"
+        },
+        "vm": {
+          "$ref": "#/$defs/vm"
+        },
+        "host": {
+          "$ref": "#/$defs/host"
+        },
+        "cluster": {
+          "$ref": "#/$defs/cluster"
+        },
+        "database": {
+          "$ref": "#/$defs/database"
+        },
+        "extensions": {
+          "type": "object",
+          "description": "Additive, profile-specific data. Lets collector profiles extend a workload without breaking the v1 core."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "vm"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "vm"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "host"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "host"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "cluster"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "cluster"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "database"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "database"
+            ]
+          }
+        }
+      ]
+    },
+    "dependency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fromToken",
+        "toToken",
+        "kind"
+      ],
+      "properties": {
+        "fromToken": {
+          "type": "string"
+        },
+        "toToken": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "network-flow",
+            "affinity"
+          ]
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "protocol": {
+          "enum": [
+            "tcp",
+            "udp",
+            "other"
+          ]
+        },
+        "observations": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of sampling intervals in which this edge was observed."
+        }
+      }
+    },
+    "collectionIssue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "severity",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "affectedTokens": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "recommendation": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Preliminary, advisory, NON-monetary recommendation (the free hook). Navigator validates these (status -> validated) and attaches TCO/bids, which are NOT stored here.",
+      "required": [
+        "id",
+        "action",
+        "appliesTo",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "action": {
+          "enum": [
+            "right-size",
+            "consolidate",
+            "retire-eol",
+            "rehost",
+            "replatform",
+            "refactor",
+            "repurchase",
+            "retire",
+            "modernize"
+          ]
+        },
+        "appliesTo": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          },
+          "description": "Workload token(s) this applies to."
+        },
+        "rationale": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Fact references that drove it, e.g. 'cpuPct.p95=34% over 72h'."
+        },
+        "targetProfile": {
+          "type": "object",
+          "description": "Suggested optimized target (directional). Shape varies by action; additive.",
+          "additionalProperties": true
+        },
+        "impact": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Directional, NON-monetary impact. Ranges/counts only — never cost/dollars (TCO is paid).",
+          "required": [
+            "metric"
+          ],
+          "properties": {
+            "metric": {
+              "type": "string",
+              "examples": [
+                "vcpu_reclaimable",
+                "memory_reclaimable_gib",
+                "instances_consolidated",
+                "workloads_eol"
+              ]
+            },
+            "low": {
+              "type": "number"
+            },
+            "high": {
+              "type": "number"
+            },
+            "unit": {
+              "type": "string"
+            }
+          }
+        },
+        "confidence": {
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        "status": {
+          "enum": [
+            "preliminary",
+            "validated"
+          ],
+          "description": "preliminary = free (Lens); validated = set by Navigator (paid)."
+        },
+        "generatedBy": {
+          "enum": [
+            "lens",
+            "navigator"
+          ]
         }
       }
     }
